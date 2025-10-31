@@ -16,21 +16,21 @@ interface ProgressBarProps {
 
 export default function ProgressBar({ steps, currentStep, completedSteps }: ProgressBarProps) {
   return (
-    <div className="w-full mb-8">
+    <div className="w-full mb-12">      
       {/* Step Pills */}
-      <div className="flex items-center justify-center space-x-3 md:space-x-4 mb-6 overflow-x-auto px-4">
+      <div className="flex items-center justify-center space-x-2 md:space-x-4 mb-8 overflow-x-auto">
         {steps.map((step, index) => (
           <div
             key={step.id}
             className={`
-              flex items-center space-x-3 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 whitespace-nowrap shadow-lg
+              flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap
               ${index === currentStep 
-                ? 'bg-gradient-to-r from-purple-600 via-violet-600 to-blue-600 text-white shadow-purple-500/25 transform scale-105' 
+                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg' 
                 : completedSteps.includes(index)
-                  ? 'bg-white/15 backdrop-blur-sm text-white border border-white/20'
-                  : 'bg-white/5 backdrop-blur-sm text-slate-300 border border-white/10'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-white/10 text-slate-400'
               }
-              ${index <= currentStep ? 'opacity-100' : 'opacity-60'}
+              ${index <= currentStep ? 'opacity-100' : 'opacity-50'}
             `}
           >
             <div className={`
@@ -50,20 +50,20 @@ export default function ProgressBar({ steps, currentStep, completedSteps }: Prog
                 <span>{index + 1}</span>
               )}
             </div>
-            <span className="hidden md:inline text-xs font-medium">{step.title}</span>
+            <span className="hidden sm:inline">{step.title}</span>
           </div>
         ))}
       </div>
-
+      
       {/* Current Step Title */}
       <div className="text-center">
-        <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-4">
-          <span className="text-sm font-medium text-white/70">Step {currentStep + 1} of {steps.length}</span>
-        </div>
-        <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+          Step {currentStep + 1}
+        </h2>
+        <h3 className="text-xl md:text-2xl font-semibold text-white/90 mb-2">
           {steps[currentStep]?.title}
         </h3>
-        <p className="text-slate-300 max-w-2xl mx-auto">
+        <p className="text-slate-300">
           {steps[currentStep]?.description}
         </p>
       </div>

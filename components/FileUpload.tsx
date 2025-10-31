@@ -41,24 +41,21 @@ export default function FileUpload({ onFileSelect, onSkip }: FileUploadProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-4">
-          Upload Your Existing Resume
-        </h1>
-        <p className="text-lg text-slate-400">
+        <p className="text-slate-300">
           Upload your current resume to get started, or create a new one from scratch
         </p>
       </div>
 
       {/* File Upload Area */}
       <div className={`
-        relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300
+        relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 backdrop-blur-sm
         ${dragActive 
-          ? 'border-blue-400 bg-blue-500/10' 
+          ? 'border-purple-400 bg-purple-500/10' 
           : selectedFile 
             ? 'border-emerald-400 bg-emerald-500/10'
-            : 'border-slate-600 hover:border-slate-500 bg-slate-800/30'
+            : 'border-white/20 hover:border-white/30 bg-white/5 hover:bg-white/10'
         }
       `}
         onDragEnter={handleDrag}
@@ -77,7 +74,7 @@ export default function FileUpload({ onFileSelect, onSkip }: FileUploadProps) {
         <div className="space-y-6">
           {selectedFile ? (
             <div className="space-y-4">
-              <div className="w-16 h-16 mx-auto bg-emerald-500/20 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto bg-emerald-500/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-emerald-400/20">
                 <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -92,8 +89,8 @@ export default function FileUpload({ onFileSelect, onSkip }: FileUploadProps) {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="w-16 h-16 mx-auto bg-slate-700 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
+                <svg className="w-8 h-8 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
               </div>
@@ -118,7 +115,7 @@ export default function FileUpload({ onFileSelect, onSkip }: FileUploadProps) {
         {selectedFile ? (
           <button
             onClick={() => onFileSelect(selectedFile)}
-            className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+            className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -128,7 +125,7 @@ export default function FileUpload({ onFileSelect, onSkip }: FileUploadProps) {
         ) : (
           <label
             htmlFor="file-upload"
-            className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-2"
+            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -139,7 +136,7 @@ export default function FileUpload({ onFileSelect, onSkip }: FileUploadProps) {
         
         <button
           onClick={onSkip}
-          className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-lg transition-colors"
+          className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/30 text-white font-medium rounded-xl transition-all duration-200 backdrop-blur-sm"
         >
           Skip & Create New Resume
         </button>
