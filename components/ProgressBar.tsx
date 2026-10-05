@@ -5,7 +5,6 @@ interface WizardStep {
   id: string
   title: string
   description: string
-  icon: React.ReactNode
 }
 
 interface ProgressBarProps {
@@ -16,73 +15,58 @@ interface ProgressBarProps {
 
 export default function ProgressBar({ steps, currentStep, completedSteps }: ProgressBarProps) {
   return (
-    <div className="w-full bg-slate-800/50 rounded-xl p-6 mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-white">Resume Builder Progress</h2>
-        <span className="text-sm text-slate-400">
-          Step {currentStep + 1} of {steps.length}
-        </span>
-      </div>
-      
-      {/* Progress bar */}
-      <div className="relative">
-        <div className="flex items-center justify-between mb-2">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex flex-col items-center relative z-10">
-              {/* Step circle */}
-              <div className={`
-                w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm transition-all duration-300
-                ${completedSteps.includes(index) 
-                  ? 'bg-emerald-500 text-white' 
-                  : index === currentStep 
-                    ? 'bg-blue-600 text-white ring-4 ring-blue-600/30' 
-                    : 'bg-slate-700 text-slate-400'
-                }
-              `}>
-                {completedSteps.includes(index) ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <span>{index + 1}</span>
-                )}
-              </div>
-              
-              {/* Step label */}
-              <div className="mt-2 text-center">
-                <p className={`text-xs font-medium ${
-                  index <= currentStep ? 'text-white' : 'text-slate-500'
-                }`}>
+    <div className="mb-8">
+      <div className="flex items-center overflow-x-auto pb-1">
+        {steps.map((step, index) => {
+          const isDone = completedSteps.includes(index)
+          const isCurrent = index === currentStep
+          return (
+            <React.Fragment key={step.id}>
+              <div className="flex flex-shrink-0 flex-col items-center gap-1.5">
+                <div
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold"
+                  style={{
+                    background: isCurrent ? 'var(--accent)' : isDone ? 'var(--accent-soft)' : 'var(--bg-muted)',
+                    color: isCurrent ? '#fff' : isDone ? 'var(--accent-text)' : 'var(--text-faint)',
+                    border: isCurrent ? '1px solid transparent' : '1px solid var(--border)'
+                  }}
+                >
+                  {isDone ? (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    index + 1
+                  )}
+                </div>
+                <span
+                  className="hidden text-[11px] font-medium sm:block"
+                  style={{ color: isCurrent ? 'var(--text)' : 'var(--text-faint)' }}
+                >
                   {step.title}
-                </p>
-                <p className="text-xs text-slate-500 mt-1 max-w-20">
-                  {step.description}
-                </p>
+                </span>
               </div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Progress line */}
-        <div className="absolute top-5 left-5 right-5 h-0.5 bg-slate-700 -z-10">
-          <div 
-            className="h-full bg-blue-600 transition-all duration-500 ease-out"
-            style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
-          />
-        </div>
+              {index < steps.length - 1 && (
+                <div
+                  className="mx-1.5 h-px flex-1 sm:mx-2"
+                  style={{ background: isDone ? 'var(--accent)' : 'var(--border)', minWidth: '1.25rem' }}
+                />
+              )}
+            </React.Fragment>
+          )
+        })}
       </div>
-      
-      {/* Current step info */}
-      <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-        <div className="flex items-center gap-3">
-          <div className="text-blue-400">
-            {steps[currentStep]?.icon}
-          </div>
-          <div>
-            <h3 className="font-medium text-white">{steps[currentStep]?.title}</h3>
-            <p className="text-sm text-slate-400">{steps[currentStep]?.description}</p>
-          </div>
-        </div>
+
+      <div className="mt-5">
+        <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>
+          Step {currentStep + 1} of {steps.length}
+        </p>
+        <h2 className="mt-1 text-xl font-semibold" style={{ color: 'var(--text)' }}>
+          {steps[currentStep]?.title}
+        </h2>
+        <p className="mt-0.5 text-sm" style={{ color: 'var(--text-muted)' }}>
+          {steps[currentStep]?.description}
+        </p>
       </div>
     </div>
   )

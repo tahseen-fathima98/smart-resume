@@ -1,84 +1,155 @@
 import { NextResponse } from 'next/server'
 
-type HFResponse = any
+type Suggestion = {
+  id: string
+  text: string
+  patch?: Record<string, unknown>
+}
 
-export async function POST(request: Request){
+type HuggingFaceResponse =
+  | Array<{ generated_text?: string }>
+  | { generated_text?: string; error?: string }
+  | string
+
+const DEFAULT_MODEL = 'google/flan-t5-small'
+const REQUEST_TIMEOUT_MS = 30_000
+
+function fallbackSuggestions(): Suggestion[] {
+  return [
+    {
+      id: 'fallback-1',
+      text: 'Strengthen your summary with a measurable result from your recent work.',
+      patch: {
+        summary: 'Results-focused professional with a track record of delivering reliable work and measurable improvements.'
+      }
+    },
+    {
+      id: 'fallback-2',
+      text: 'Keep your most relevant technical skills prominent and easy to scan.',
+      patch: {
+        skills: [
+          { name: 'React', level: 85 },
+          { name: 'TypeScript', level: 75 },
+          { name: 'Tailwind CSS', level: 65 }
+        ]
+      }
+    }
+  ]
+}
+
+function fallbackResponse(warning?: string) {
+  return NextResponse.json({
+    suggestions: fallbackSuggestions(),
+    source: 'fallback',
+    ...(warning ? { warning } : {})
+  })
+}
+
+function extractGeneratedText(data: HuggingFaceResponse): string {
+  if (typeof data === 'string') return data
+  if (Array.isArray(data)) return data[0]?.generated_text ?? ''
+  return data.generated_text ?? ''
+}
+
+function parseSuggestions(text: string): Suggestion[] | null {
+  const candidates = [text, text.match(/\[[\s\S]*\]/)?.[0]].filter(
+    (candidate): candidate is string => Boolean(candidate)
+  )
+
+  for (const candidate of candidates) {
+    try {
+      const parsed: unknown = JSON.parse(candidate)
+      if (!Array.isArray(parsed)) continue
+
+      const suggestions = parsed
+        .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+        .filter(item => typeof item.text === 'string' && item.text.trim().length > 0)
+        .slice(0, 5)
+        .map((item, index) => ({
+          id: typeof item.id === 'string' && item.id ? item.id : `ai-${index + 1}`,
+          text: String(item.text).trim(),
+          ...(item.patch && typeof item.patch === 'object'
+            ? { patch: item.patch as Record<string, unknown> }
+            : {})
+        }))
+
+      if (suggestions.length > 0) return suggestions
+    } catch {
+      // Try the next candidate (for example, JSON embedded in model prose).
+    }
+  }
+
+  return null
+}
+
+export async function POST(request: Request) {
+  let body: unknown
   try {
-    const body = await request.json()
-    const { prompt } = body
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'The request body must be valid JSON.' }, { status: 400 })
+  }
 
-    const HF_KEY = process.env.HUGGINGFACE_API_KEY
+  const prompt =
+    body && typeof body === 'object' && 'prompt' in body && typeof body.prompt === 'string'
+      ? body.prompt.trim()
+      : ''
 
-    if (!prompt){
-      return NextResponse.json({ error: 'No prompt provided' }, { status: 400 })
-    }
+  if (!prompt) {
+    return NextResponse.json({ error: 'No prompt provided' }, { status: 400 })
+  }
 
-    // Instruction: return a JSON array of suggestions with patches
-    const systemInstruction = `You are an assistant that returns JSON only.
-Given the user's resume context, produce a JSON array named suggestions.
-Each suggestion must be an object with:
-- id: string
-- text: short human-readable suggestion
-- patch: an object containing any of these optional fields: name (string), title (string), summary (string), skills (array of {name,level}), experiences (array of {company,role,date,details})
-Return ONLY the JSON array as the response.`
+  const apiKey = process.env.HUGGINGFACE_API_KEY?.trim()
+  if (!apiKey) return fallbackResponse()
 
-    // If no HF key, return mocked structured patches
-    if (!HF_KEY){
-      const suggestions = [
-        { id: 'mock-1', text: 'Add a metrics-driven bullet to your experience.', patch: { summary: 'Experienced frontend developer focused on performance optimization, reduced load time by 30%.' } },
-        { id: 'mock-2', text: 'Add Tailwind to your skills.', patch: { skills: [{ name: 'React', level: 85 }, { name: 'TypeScript', level: 70 }, { name: 'Tailwind', level: 60 }] } }
-      ]
-      return NextResponse.json({ suggestions })
-    }
+  const model = process.env.HUGGINGFACE_MODEL?.trim() || DEFAULT_MODEL
+  const inferenceUrl = `https://router.huggingface.co/hf-inference/models/${encodeURIComponent(model).replace(/%2F/g, '/')}`
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
-    // Call HF inference with instruction + prompt; ask model to output JSON array
-    const model = 'google/flan-t5-small'
-    const hfUrl = `https://api-inference.huggingface.co/models/${model}`
+  const instruction = `You are a resume coach. Return ONLY a valid JSON array containing at most five suggestions.
+Each item must have an id, a short text description, and a patch object. A patch may contain name, title, summary, skills (an array of {name, level}), or experiences (an array of {company, role, date, details}).
 
-    const combined = `${systemInstruction}\n\nContext:\n${prompt}\n\nRespond with only valid JSON.`
+Resume context:
+${prompt}`
 
-    const res = await fetch(hfUrl, {
+  try {
+    const response = await fetch(inferenceUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${HF_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ inputs: combined, options: { wait_for_model: true } })
+      body: JSON.stringify({
+        inputs: instruction,
+        parameters: { max_new_tokens: 700, return_full_text: false },
+        options: { wait_for_model: true }
+      }),
+      signal: controller.signal,
+      cache: 'no-store'
     })
 
-    if (!res.ok){
-      const text = await res.text()
-      return NextResponse.json({ error: text }, { status: res.status })
+    if (!response.ok) {
+      return fallbackResponse(
+        'Live AI is currently unavailable, so offline suggestions are shown instead.'
+      )
     }
 
-    const data: HFResponse = await res.json()
-    // Attempt to extract text
-    let text = ''
-    if (Array.isArray(data) && data[0] && data[0].generated_text) text = data[0].generated_text
-    else if ((data as any).generated_text) text = (data as any).generated_text
-    else if (typeof data === 'string') text = data
-    else text = JSON.stringify(data)
+    const data = (await response.json()) as HuggingFaceResponse
+    const suggestions = parseSuggestions(extractGeneratedText(data))
 
-    // Try parse JSON strictly
-    try {
-      const parsed = JSON.parse(text)
-      if (Array.isArray(parsed)) return NextResponse.json({ suggestions: parsed })
-    } catch(e){
-      // fallthrough
+    if (!suggestions) {
+      return fallbackResponse(
+        'The AI response could not be read, so offline suggestions are shown instead.'
+      )
     }
 
-    // fallback: try to extract JSON substring
-    const jsonMatch = text.match(/\[.*\]/s)
-    if (jsonMatch){
-      try {
-        const parsed = JSON.parse(jsonMatch[0])
-        if (Array.isArray(parsed)) return NextResponse.json({ suggestions: parsed })
-      } catch(e){}
-    }
-
-    // final fallback: return a message
-    return NextResponse.json({ error: 'Could not parse model output as JSON. Model output: ' + text })
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ suggestions, source: 'huggingface' })
+  } catch {
+    return fallbackResponse(
+      'Live AI could not be reached, so offline suggestions are shown instead.'
+    )
+  } finally {
+    clearTimeout(timeout)
   }
 }

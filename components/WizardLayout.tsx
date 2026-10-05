@@ -1,5 +1,7 @@
 'use client'
 import React from 'react'
+import ThemeToggle from './ThemeToggle'
+import Logo from './Logo'
 
 interface WizardLayoutProps {
   children: React.ReactNode
@@ -13,84 +15,73 @@ interface WizardLayoutProps {
   nextVariant?: 'primary' | 'success'
 }
 
-export default function WizardLayout({ 
-  children, 
-  onNext, 
-  onPrev, 
+export default function WizardLayout({
+  children,
+  onNext,
+  onPrev,
   nextLabel = 'Next Step',
-  prevLabel = 'Previous',
+  prevLabel = 'Back',
   showNext = true,
   showPrev = true,
   isNextDisabled = false,
   nextVariant = 'primary'
 }: WizardLayoutProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
-      <header className="w-full border-b border-white/10 py-4 px-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white">SF</div>
-            <div>
-              <h1 className="text-lg font-semibold text-white">Smart Resume Builder</h1>
-              <p className="text-xs text-slate-400">TypeScript · Next.js · Tailwind · HF AI</p>
-            </div>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <header style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <Logo size={26} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              Smart Resume
+            </span>
           </div>
-          <div className="hidden md:block text-sm text-slate-400">
-            AI-Powered Resume Creation
+          <div className="flex items-center gap-4">
+            <a
+              href="mailto:sawa.seido08@gmail.com"
+              className="hidden text-sm sm:inline"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Contact
+            </a>
+            <ThemeToggle />
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="min-h-[calc(100vh-200px)]">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="surface p-4 sm:p-8 md:p-10" style={{ boxShadow: 'var(--shadow-sm)' }}>
           {children}
-        </div>
 
-        {/* Navigation Footer */}
-        <footer className="sticky bottom-0 bg-slate-900/95 backdrop-blur-md border-t border-white/20 p-6 mt-8 -mx-4 shadow-2xl">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex-1">
-              {showPrev && onPrev ? (
-                <button
-                  onClick={onPrev}
-                  className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white font-medium rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  {prevLabel}
-                </button>
-              ) : (
-                <div></div>
-              )}
-            </div>
+          <div
+            className="mt-10 flex flex-col-reverse items-stretch justify-between gap-3 pt-6 sm:flex-row sm:items-center"
+            style={{ borderTop: '1px solid var(--border)' }}
+          >
+            {showPrev && onPrev ? (
+              <button onClick={onPrev} className="btn btn-outline">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                {prevLabel}
+              </button>
+            ) : (
+              <span />
+            )}
 
-            <div className="flex-1 flex justify-end">
-              {showNext && onNext && (
-                <button
-                  onClick={onNext}
-                  disabled={isNextDisabled}
-                  className={`
-                    px-8 py-3 font-medium rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl
-                    ${nextVariant === 'success'
-                      ? 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800/50'
-                      : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800/50'
-                    }
-                    text-white disabled:text-slate-400 disabled:cursor-not-allowed
-                    ${isNextDisabled ? 'opacity-50' : 'hover:scale-105'}
-                  `}
-                >
-                  {nextLabel}
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              )}
-            </div>
+            {showNext && onNext && (
+              <button
+                onClick={onNext}
+                disabled={isNextDisabled}
+                className={`btn ${nextVariant === 'success' ? 'btn-success' : 'btn-primary'}`}
+              >
+                {nextLabel}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
           </div>
-        </footer>
+        </div>
       </main>
     </div>
   )

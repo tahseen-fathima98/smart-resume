@@ -1,105 +1,118 @@
 'use client'
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Skill } from '../app/page'
 
-export default function SkillAnalyzer({ skills }: { skills: Skill[] }){
-  const getSkillLevel = (level: number) => {
-    if (level >= 80) return { label: 'Expert', color: 'text-emerald-400', bg: 'bg-emerald-500' }
-    if (level >= 60) return { label: 'Advanced', color: 'text-blue-400', bg: 'bg-blue-500' }
-    if (level >= 40) return { label: 'Intermediate', color: 'text-yellow-400', bg: 'bg-yellow-500' }
-    return { label: 'Beginner', color: 'text-orange-400', bg: 'bg-orange-500' }
+type Props = {
+  skills: Skill[]
+  onChange: (skills: Skill[]) => void
+}
+
+function levelInfo(level: number) {
+  if (level >= 80) return { label: 'Expert', className: 'badge-success' }
+  if (level >= 60) return { label: 'Advanced', className: 'badge-accent' }
+  if (level >= 40) return { label: 'Intermediate', className: 'badge-warn' }
+  return { label: 'Beginner', className: 'badge' }
+}
+
+export default function SkillAnalyzer({ skills, onChange }: Props) {
+  const [newSkillName, setNewSkillName] = useState('')
+  const [newSkillLevel, setNewSkillLevel] = useState(70)
+
+  const addSkill = () => {
+    const name = newSkillName.trim()
+    if (!name) return
+    if (skills.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+      setNewSkillName('')
+      return
+    }
+    onChange([...skills, { name, level: newSkillLevel }])
+    setNewSkillName('')
+    setNewSkillLevel(70)
+  }
+
+  const removeSkill = (name: string) => {
+    onChange(skills.filter(s => s.name !== name))
+  }
+
+  const updateSkillLevel = (name: string, level: number) => {
+    onChange(skills.map(s => (s.name === name ? { ...s, level } : s)))
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {skills.map((skill, index) => {
-          const skillInfo = getSkillLevel(skill.level)
-          return (
-            <motion.div 
-              key={skill.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="p-6 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-slate-600 transition-all"
-            >
-              <div className="flex flex-col items-center space-y-4">
-                {/* Circular progress */}
-                <div className="relative w-20 h-20">
-                  <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="16"
-                      fill="none"
-                      className="stroke-slate-700"
-                      strokeWidth="2"
-                    />
-                    <motion.circle
-                      cx="18"
-                      cy="18"
-                      r="16"
-                      fill="none"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      className={skillInfo.bg.replace('bg-', 'stroke-')}
-                      strokeDasharray={`${skill.level} ${100 - skill.level}`}
-                      initial={{ strokeDasharray: "0 100" }}
-                      animate={{ strokeDasharray: `${skill.level} ${100 - skill.level}` }}
-                      transition={{ duration: 1, delay: index * 0.1 }}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">{skill.level}%</span>
-                  </div>
-                </div>
-
-                {/* Skill info */}
-                <div className="text-center">
-                  <h3 className="font-semibold text-white mb-1">{skill.name}</h3>
-                  <span className={`text-xs ${skillInfo.color} font-medium`}>
-                    {skillInfo.label}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          )
-        })}
+      <div className="surface-muted p-4 sm:p-5">
+        <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text)' }}>Add a skill</h3>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            className="input flex-1"
+            placeholder="e.g. React, Project Management..."
+            value={newSkillName}
+            onChange={e => setNewSkillName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addSkill()}
+          />
+          <div className="flex items-center gap-3">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={newSkillLevel}
+              onChange={e => setNewSkillLevel(Number(e.target.value))}
+              className="slider w-28"
+            />
+            <span className="w-9 text-sm" style={{ color: 'var(--text-muted)' }}>{newSkillLevel}%</span>
+          </div>
+          <button onClick={addSkill} className="btn btn-primary whitespace-nowrap">Add skill</button>
+        </div>
       </div>
 
-      {/* Skills overview */}
-      <div className="mt-8 p-6 bg-slate-800/30 rounded-xl border border-slate-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Skills Overview</h3>
-        <div className="space-y-3">
+      {skills.length === 0 ? (
+        <div className="surface-muted p-8 text-center" style={{ borderStyle: 'dashed' }}>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No skills added yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
           {skills.map((skill, index) => {
-            const skillInfo = getSkillLevel(skill.level)
+            const info = levelInfo(skill.level)
             return (
-              <div key={skill.name} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <span className="text-white font-medium">{skill.name}</span>
-                  <span className={`text-xs ${skillInfo.color} px-2 py-1 rounded-full bg-slate-700/50`}>
-                    {skillInfo.label}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-24 bg-slate-700 rounded-full h-2">
-                    <motion.div
-                      className={`${skillInfo.bg} h-2 rounded-full`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${skill.level}%` }}
-                      transition={{ duration: 0.8, delay: index * 0.1 }}
-                    />
+              <motion.div
+                key={skill.name}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+                className="surface group flex items-center gap-4 p-3.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <span className="truncate text-sm font-medium" style={{ color: 'var(--text)' }}>{skill.name}</span>
+                    <span className={`badge ${info.className}`}>{info.label}</span>
                   </div>
-                  <span className="text-slate-400 text-sm font-medium w-10 text-right">
-                    {skill.level}%
-                  </span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={skill.level}
+                    onChange={e => updateSkillLevel(skill.name, Number(e.target.value))}
+                    className="slider w-full"
+                  />
                 </div>
-              </div>
+                <span className="w-9 flex-shrink-0 text-right text-sm" style={{ color: 'var(--text-muted)' }}>
+                  {skill.level}%
+                </span>
+                <button
+                  onClick={() => removeSkill(skill.name)}
+                  className="btn-ghost flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-label={`Remove ${skill.name}`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </motion.div>
             )
           })}
         </div>
-      </div>
+      )}
     </div>
   )
 }
