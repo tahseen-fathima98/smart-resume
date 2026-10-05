@@ -1,5 +1,7 @@
 'use client'
 import React from 'react'
+import ThemeToggle from './ThemeToggle'
+import Logo from './Logo'
 
 interface WizardLayoutProps {
   children: React.ReactNode
@@ -13,98 +15,71 @@ interface WizardLayoutProps {
   nextVariant?: 'primary' | 'success'
 }
 
-export default function WizardLayout({ 
-  children, 
-  onNext, 
-  onPrev, 
+export default function WizardLayout({
+  children,
+  onNext,
+  onPrev,
   nextLabel = 'Next Step',
-  prevLabel = 'Back to Login',
+  prevLabel = 'Back',
   showNext = true,
   showPrev = true,
   isNextDisabled = false,
   nextVariant = 'primary'
 }: WizardLayoutProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl"></div>
-        <div className="absolute top-20 right-20 w-60 h-60 bg-pink-500/10 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-20 left-20 w-60 h-60 bg-cyan-500/10 rounded-full blur-2xl"></div>
-      </div>
-
-      {/* Header */}
-      <header className="relative z-10 w-full py-6 px-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center font-bold text-white shadow-lg">
-              SR
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">Smart Resume Builder</h1>
-              <p className="text-sm text-slate-300">AI-Powered Resume Creation</p>
-            </div>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <header style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <Logo size={26} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              Smart Resume
+            </span>
           </div>
-          <div className="hidden md:flex items-center gap-4">
-            <button className="text-slate-300 hover:text-white transition-colors">Contact Us</button>
+          <div className="flex items-center gap-4">
+            <a
+              href="mailto:sawa.seido08@gmail.com"
+              className="hidden text-sm sm:inline"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Contact
+            </a>
+            <ThemeToggle />
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-4 pb-8">
-        <div className="max-w-5xl mx-auto">
-          {/* Glass Card Container */}
-          <div className="bg-white/10 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 p-1 shadow-purple-500/10">
-            <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-xl border border-white/30 shadow-inner">
-              <div className="p-8 md:p-12">
-                {children}
-                
-                {/* Navigation Footer */}
-                <div className="flex items-center justify-between pt-8 mt-8 border-t border-white/10">
-                  <div className="flex-1">
-                    {showPrev && onPrev ? (
-                      <button
-                        onClick={onPrev}
-                        className="px-6 py-3 bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white font-medium rounded-xl transition-all duration-200 flex items-center gap-2 border border-white/10 hover:border-white/20"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        {prevLabel}
-                      </button>
-                    ) : (
-                      <div></div>
-                    )}
-                  </div>
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="surface p-4 sm:p-8 md:p-10" style={{ boxShadow: 'var(--shadow-sm)' }}>
+          {children}
 
-                  <div className="flex-1 flex justify-end">
-                    {showNext && onNext && (
-                      <button
-                        onClick={onNext}
-                        disabled={isNextDisabled}
-                        className={`
-                          px-8 py-3 font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg
-                          ${nextVariant === 'success'
-                            ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600'
-                            : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
-                          }
-                          text-white disabled:opacity-50 disabled:cursor-not-allowed
-                          ${!isNextDisabled ? 'hover:scale-105 hover:shadow-xl' : ''}
-                        `}
-                      >
-                        {nextLabel}
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div
+            className="mt-10 flex flex-col-reverse items-stretch justify-between gap-3 pt-6 sm:flex-row sm:items-center"
+            style={{ borderTop: '1px solid var(--border)' }}
+          >
+            {showPrev && onPrev ? (
+              <button onClick={onPrev} className="btn btn-outline">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                {prevLabel}
+              </button>
+            ) : (
+              <span />
+            )}
+
+            {showNext && onNext && (
+              <button
+                onClick={onNext}
+                disabled={isNextDisabled}
+                className={`btn ${nextVariant === 'success' ? 'btn-success' : 'btn-primary'}`}
+              >
+                {nextLabel}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       </main>

@@ -1,63 +1,90 @@
 'use client'
 import React, { useCallback, useState } from 'react'
+import type { ParsedResume } from '../lib/resumeParser'
 
 interface FileUploadProps {
-  onFileSelect: (file: File) => void
+  onParsed: (parsed: ParsedResume) => void
   onSkip: () => void
 }
 
-export default function FileUpload({ onFileSelect, onSkip }: FileUploadProps) {
+export default function FileUpload({ onParsed, onSkip }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true)
-    } else if (e.type === "dragleave") {
+    } else if (e.type === 'dragleave') {
       setDragActive(false)
     }
   }, [])
+
+  const pickFile = (file: File) => {
+    setError(null)
+    setSelectedFile(file)
+  }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0]
-      setSelectedFile(file)
-      onFileSelect(file)
+      pickFile(e.dataTransfer.files[0])
     }
-  }, [onFileSelect])
+  }, [])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      setSelectedFile(file)
-      onFileSelect(file)
+      pickFile(e.target.files[0])
     }
   }
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <p className="text-slate-300">
-          Upload your current resume to get started, or create a new one from scratch
-        </p>
-      </div>
+  const processFile = async () => {
+    if (!selectedFile) return
+    setLoading(true)
+    setError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', selectedFile)
 
-      {/* File Upload Area */}
-      <div className={`
-        relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 backdrop-blur-sm
-        ${dragActive 
-          ? 'border-purple-400 bg-purple-500/10' 
-          : selectedFile 
-            ? 'border-emerald-400 bg-emerald-500/10'
-            : 'border-white/20 hover:border-white/30 bg-white/5 hover:bg-white/10'
-        }
-      `}
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to process file')
+      }
+
+      onParsed(data.parsed)
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong while processing your file')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const dropzoneBorder = dragActive
+    ? 'var(--accent)'
+    : selectedFile
+      ? 'var(--success)'
+      : 'var(--border-strong)'
+
+  return (
+    <div className="mx-auto max-w-xl">
+      <p className="mb-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+        Upload your current resume to get started, or create a new one from scratch.
+      </p>
+
+      <div
+        className="relative rounded-xl px-6 py-12 text-center transition-colors"
+        style={{
+          border: `1.5px dashed ${dropzoneBorder}`,
+          background: dragActive ? 'var(--accent-soft)' : 'var(--bg-muted)'
+        }}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -67,95 +94,69 @@ export default function FileUpload({ onFileSelect, onSkip }: FileUploadProps) {
           type="file"
           accept=".pdf,.doc,.docx,.txt"
           onChange={handleFileSelect}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
           id="file-upload"
+          disabled={loading}
         />
-        
-        <div className="space-y-6">
-          {selectedFile ? (
-            <div className="space-y-4">
-              <div className="w-16 h-16 mx-auto bg-emerald-500/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-emerald-400/20">
-                <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">File Selected!</h3>
-                <p className="text-slate-400">{selectedFile.name}</p>
-                <p className="text-sm text-slate-500">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
+
+        {selectedFile ? (
+          <div className="space-y-2">
+            <div
+              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full"
+              style={{ background: 'var(--success-soft)', color: 'var(--success)' }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
-                <svg className="w-8 h-8 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  Drag & Drop Your Resume
-                </h3>
-                <p className="text-slate-400 mb-4">
-                  or click to browse your files
-                </p>
-                <p className="text-sm text-slate-500">
-                  Supports: PDF, DOC, DOCX, TXT (Max 10MB)
-                </p>
-              </div>
+            <p className="break-all font-medium" style={{ color: 'var(--text)' }}>{selectedFile.name}</p>
+            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
+              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div
+              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full"
+              style={{ background: 'var(--bg-raised)', color: 'var(--text-faint)', border: '1px solid var(--border)' }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L7 9m5-5l5 5M5 20h14" />
+              </svg>
             </div>
-          )}
-        </div>
+            <p className="font-medium" style={{ color: 'var(--text)' }}>Drag & drop your resume</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>or click to browse files</p>
+            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>PDF, DOCX or TXT — up to 10MB</p>
+          </div>
+        )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
+      {error && (
+        <div className="mt-4 rounded-lg px-4 py-3 text-sm" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+          {error}
+        </div>
+      )}
+
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         {selectedFile ? (
-          <button
-            onClick={() => onFileSelect(selectedFile)}
-            className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-            Process Resume
+          <button onClick={processFile} disabled={loading} className="btn btn-primary flex-1">
+            {loading && <span className="spinner" />}
+            {loading ? 'Processing…' : 'Process resume'}
           </button>
         ) : (
-          <label
-            htmlFor="file-upload"
-            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            Choose File
+          <label htmlFor="file-upload" className="btn btn-primary flex-1 cursor-pointer">
+            Choose file
           </label>
         )}
-        
-        <button
-          onClick={onSkip}
-          className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/30 text-white font-medium rounded-xl transition-all duration-200 backdrop-blur-sm"
-        >
-          Skip & Create New Resume
+        <button onClick={onSkip} disabled={loading} className="btn btn-outline flex-1">
+          Start from scratch
         </button>
       </div>
 
-      {/* Help Text */}
-      <div className="mt-8 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
-        <div className="flex items-start gap-2">
-          <svg className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <p className="text-sm text-amber-300 font-medium">Privacy Note</p>
-            <p className="text-xs text-amber-200/80 mt-1">
-              Your resume data is processed locally and never stored on our servers. We respect your privacy and data security.
-            </p>
-          </div>
-        </div>
-      </div>
+      <p className="mt-6 text-xs leading-relaxed" style={{ color: 'var(--text-faint)' }}>
+        We extract text from your file and use heuristics to detect your name, summary, experience and
+        skills. Parsing isn&apos;t perfect — review and edit the results in the next steps.
+      </p>
     </div>
   )
 }
